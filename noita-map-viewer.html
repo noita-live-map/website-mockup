@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Noita Map Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        #controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(20, 20, 30, 0.9);
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #4a4a6a;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        #controls h2 {
+            margin-bottom: 15px;
+            color: #9a9aff;
+            font-size: 18px;
+            text-shadow: 0 0 10px rgba(154, 154, 255, 0.5);
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+        .control-group label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .control-group label:hover {
+            background: rgba(74, 74, 106, 0.3);
+        }
+
+        .control-group input[type="checkbox"] {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(20, 20, 30, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #4a4a6a;
+            z-index: 1000;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        #mapContainer {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            cursor: grab;
+            position: relative;
+        }
+
+        #mapContainer.grabbing {
+            cursor: grabbing;
+        }
+
+        #mapWrapper {
+            position: absolute;
+            transform-origin: 0 0;
+        }
+
+        #mapImage {
+            display: block;
+            image-rendering: pixelated;
+        }
+
+        .overlay {
+            position: absolute;
+            pointer-events: none;
+        }
+
+        .marker {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            pointer-events: all;
+            cursor: pointer;
+        }
+
+        .boss-marker {
+            width: 30px;
+            height: 30px;
+            background: rgba(255, 50, 50, 0.8);
+            border: 3px solid #ff0000;
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+            animation: pulse 2s infinite;
+        }
+
+        .orb-marker {
+            width: 24px;
+            height: 24px;
+            background: radial-gradient(circle, #ffff00, #ffa500);
+            border: 2px solid #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(255, 255, 0, 0.9);
+            animation: glow 1.5s infinite;
+        }
+
+        .player-marker {
+            width: 20px;
+            height: 20px;
+            background: rgba(0, 255, 0, 0.8);
+            border: 2px solid #00ff00;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.8);
+        }
+
+        .marker-label {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            font-size: 11px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            display: none;
+        }
+
+        .marker:hover .marker-label {
+            display: block;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(255, 255, 0, 0.9); }
+            50% { box-shadow: 0 0 25px rgba(255, 255, 0, 1); }
+        }
+
+        #uploadSection {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #4a4a6a;
+        }
+
+        #uploadSection input[type="file"] {
+            display: none;
+        }
+
+        #uploadButton {
+            background: #4a4a6a;
+            color: #fff;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.2s;
+        }
+
+        #uploadButton:hover {
+            background: #5a5a7a;
+        }
+
+        .color-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .boss-color { background: rgba(255, 50, 50, 0.8); }
+        .orb-color { background: radial-gradient(circle, #ffff00, #ffa500); }
+        .player-color { background: rgba(0, 255, 0, 0.8); }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <h2>🔮 Noita Map Viewer</h2>
+        
+        <div class="control-group">
+            <label>
+                <input type="checkbox" id="toggleBosses" checked>
+                <span class="color-indicator boss-color"></span>
+                Show Bosses
+            </label>
+        </div>
+        
+        <div class="control-group">
+            <label>
+                <input type="checkbox" id="toggleOrbs" checked>
+                <span class="color-indicator orb-color"></span>
+                Show Orbs of True Knowledge
+            </label>
+        </div>
+        
+        <div class="control-group">
+            <label>
+                <input type="checkbox" id="togglePlayers" checked>
+                <span class="color-indicator player-color"></span>
+                Show Player Markers
+            </label>
+        </div>
+
+
+
+    <div class="info">
+        <strong>Controls:</strong><br>
+        🖱️ Drag to pan | 🔍 Scroll to zoom<br>
+        Zoom: <span id="zoomLevel">100%</span>
+    </div>
+
+    <div id="mapContainer">
+        <div id="mapWrapper">
+            <img id="mapImage" src="" alt="Upload a Noita map">
+            <div id="bossOverlay" class="overlay"></div>
+            <div id="orbOverlay" class="overlay"></div>
+            <div id="playerOverlay" class="overlay"></div>
+        </div>
+    </div>
+
+    <script>
+        // Map viewer state
+        let scale = 1;
+        let translateX = 0;
+        let translateY = 0;
+        let isDragging = false;
+        let startX, startY;
+        let imageLoaded = false;
+
+        // DOM elements
+        const mapContainer = document.getElementById('mapContainer');
+        const mapWrapper = document.getElementById('mapWrapper');
+        const mapImage = document.getElementById('mapImage');
+        const bossOverlay = document.getElementById('bossOverlay');
+        const orbOverlay = document.getElementById('orbOverlay');
+        const playerOverlay = document.getElementById('playerOverlay');
+        const zoomLevel = document.getElementById('zoomLevel');
+
+        // Marker data - coordinates will be set as percentages (0-1) of image dimensions
+        // Edit these values to match your actual marker positions
+        const markers = {
+           bosses: [
+                { x: 0.48, y: -0.43, name: 'Boss1' },
+                { x: 0.55, y: -0.46, name: 'Dragon' },
+                { x: 0.52, y: -0.44, name: 'Hacker' },
+                { x: 0.58, y: -0.48, name: 'Boss3' }
+            ],
+            orbs: [
+                { x: 0.42, y: -0.45, name: 'Orb 1' },
+                { x: 0.46, y: -0.47, name: 'Orb 2' },
+                { x: 0.50, y: -0.44, name: 'Orb 3' },
+                { x: 0.54, y: -0.49, name: 'Orb 4' },
+                { x: 0.58, y: -0.46, name: 'Orb 5' },
+                { x: 0.52, y: -0.42, name: 'Orb 6' },
+                { x: 0.44, y: -0.48, name: 'Orb 7' }
+            ],
+            players: [
+                { x: 0.58, y: -0.45, name: 'Marker 1' }
+            ]
+        };
+
+        // Load map image
+        function loadMap() {
+            console.log('Attempting to load map from map.png');
+            mapImage.src = 'map.png';
+            mapImage.onload = () => {
+                console.log('Map loaded successfully:', mapImage.naturalWidth, 'x', mapImage.naturalHeight);
+                imageLoaded = true;
+                createMarkers();
+                centerMap();
+            };
+            mapImage.onerror = (e) => {
+                console.error('Failed to load map image from map.png', e);
+                alert('Could not load map image. Please use the upload button to select your map file.');
+            };
+        }
+
+        // Create marker elements
+        function createMarkers() {
+            if (!imageLoaded) return;
+
+            const imgWidth = mapImage.naturalWidth;
+            const imgHeight = mapImage.naturalHeight;
+
+            // Clear existing markers
+            bossOverlay.innerHTML = '';
+            orbOverlay.innerHTML = '';
+            playerOverlay.innerHTML = '';
+
+            // Create boss markers
+            markers.bosses.forEach(marker => {
+                const el = document.createElement('div');
+                el.className = 'marker boss-marker';
+                el.style.left = `${marker.x * imgWidth}px`;
+                el.style.top = `${marker.y * imgHeight}px`;
+                
+                const label = document.createElement('div');
+                label.className = 'marker-label';
+                label.textContent = marker.name;
+                el.appendChild(label);
+                
+                bossOverlay.appendChild(el);
+            });
+
+            // Create orb markers
+            markers.orbs.forEach(marker => {
+                const el = document.createElement('div');
+                el.className = 'marker orb-marker';
+                el.style.left = `${marker.x * imgWidth}px`;
+                el.style.top = `${marker.y * imgHeight}px`;
+                
+                const label = document.createElement('div');
+                label.className = 'marker-label';
+                label.textContent = marker.name;
+                el.appendChild(label);
+                
+                orbOverlay.appendChild(el);
+            });
+
+            // Create player markers
+            markers.players.forEach(marker => {
+                const el = document.createElement('div');
+                el.className = 'marker player-marker';
+                el.style.left = `${marker.x * imgWidth}px`;
+                el.style.top = `${marker.y * imgHeight}px`;
+                
+                const label = document.createElement('div');
+                label.className = 'marker-label';
+                label.textContent = marker.name;
+                el.appendChild(label);
+                
+                playerOverlay.appendChild(el);
+            });
+
+            // Set overlay dimensions
+            [bossOverlay, orbOverlay, playerOverlay].forEach(overlay => {
+                overlay.style.width = `${imgWidth}px`;
+                overlay.style.height = `${imgHeight}px`;
+            });
+        }
+
+        // Update transform
+        function updateTransform() {
+            mapWrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+            zoomLevel.textContent = `${Math.round(scale * 100)}%`;
+        }
+
+        // Center and fit map
+        function centerMap() {
+            const containerRect = mapContainer.getBoundingClientRect();
+            const imgWidth = mapImage.naturalWidth;
+            const imgHeight = mapImage.naturalHeight;
+            
+            // Calculate scale to fit the image in the viewport with some padding
+            const scaleX = (containerRect.width * 0.9) / imgWidth;
+            const scaleY = (containerRect.height * 0.9) / imgHeight;
+            scale = Math.min(scaleX, scaleY, 1); // Don't zoom in beyond 100% initially
+            
+            // Center the image
+            translateX = (containerRect.width - imgWidth * scale) / 2;
+            translateY = (containerRect.height - imgHeight * scale) / 2;
+            
+            updateTransform();
+        }
+
+        // Mouse down
+        mapContainer.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX - translateX;
+            startY = e.clientY - translateY;
+            mapContainer.classList.add('grabbing');
+        });
+
+        // Mouse move
+        mapContainer.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            
+            translateX = e.clientX - startX;
+            translateY = e.clientY - startY;
+            updateTransform();
+        });
+
+        // Mouse up
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            mapContainer.classList.remove('grabbing');
+        });
+
+        // Zoom with mouse wheel
+        mapContainer.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            
+            const delta = e.deltaY > 0 ? 0.9 : 1.1;
+            const newScale = Math.min(Math.max(0.1, scale * delta), 10);
+            
+            // Zoom towards mouse cursor
+            const rect = mapContainer.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            const scaleChange = newScale / scale;
+            translateX = mouseX - (mouseX - translateX) * scaleChange;
+            translateY = mouseY - (mouseY - translateY) * scaleChange;
+            
+            scale = newScale;
+            updateTransform();
+        });
+
+        // Toggle overlays
+        document.getElementById('toggleBosses').addEventListener('change', (e) => {
+            bossOverlay.style.display = e.target.checked ? 'block' : 'none';
+        });
+
+        document.getElementById('toggleOrbs').addEventListener('change', (e) => {
+            orbOverlay.style.display = e.target.checked ? 'block' : 'none';
+        });
+
+        document.getElementById('togglePlayers').addEventListener('change', (e) => {
+            playerOverlay.style.display = e.target.checked ? 'block' : 'none';
+        });
+
+        
+
+        // Initialize
+        loadMap();
+    </script>
+</body>
+</html>
