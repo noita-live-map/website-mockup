@@ -20,34 +20,40 @@
 
         #controls {
             position: fixed;
-            top: 20px;
-            left: 20px;
+            top: 0;
+            left: 0;
+            right: 0;
             background: rgba(20, 20, 30, 0.9);
-            padding: 20px;
-            border-radius: 8px;
-            border: 2px solid #4a4a6a;
+            padding: 10px 20px;
+            border-bottom: 2px solid #4a4a6a;
             z-index: 1000;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
         }
 
         #controls h2 {
-            margin-bottom: 15px;
+            margin: 0;
             color: #9a9aff;
             font-size: 18px;
             text-shadow: 0 0 10px rgba(154, 154, 255, 0.5);
+            white-space: nowrap;
         }
 
         .control-group {
-            margin-bottom: 12px;
+            margin: 0;
         }
 
         .control-group label {
             display: flex;
             align-items: center;
             cursor: pointer;
-            padding: 8px;
+            padding: 8px 12px;
             border-radius: 4px;
             transition: background 0.2s;
+            white-space: nowrap;
         }
 
         .control-group label:hover {
@@ -114,7 +120,6 @@
             background: rgba(255, 50, 50, 0.8);
             border: 3px solid #ff0000;
             border-radius: 50%;
-            box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
             animation: pulse 2s infinite;
         }
 
@@ -156,8 +161,8 @@
         }
 
         @keyframes pulse {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); }
-            50% { transform: translate(-50%, -50%) scale(1.2); }
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 0, 0, 0.8); }
+            50% { box-shadow: 0 0 35px rgba(255, 0, 0, 1); }
         }
 
         @keyframes glow {
@@ -231,8 +236,7 @@
                 Show Player Markers
             </label>
         </div>
-
-
+    </div>
 
     <div class="info">
         <strong>Controls:</strong><br>
@@ -374,6 +378,12 @@
         function updateTransform() {
             mapWrapper.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
             zoomLevel.textContent = `${Math.round(scale * 100)}%`;
+
+            // Scale markers inversely so they stay a consistent screen size
+            const markerScale = 1 / scale;
+            document.querySelectorAll('.marker').forEach(marker => {
+                marker.style.transform = `translate(-50%, -50%) scale(${markerScale})`;
+            });
         }
 
         // Center and fit map
