@@ -42,15 +42,15 @@ const markers = {
 function loadMap() {
     console.log('Attempting to load map from map.png');
     mapImage.src = 'map.png';
-    mapImage.onload = () => {
+    mapImage.addEventListener('load', () => {
         console.log('Map loaded successfully:', mapImage.naturalWidth, 'x', mapImage.naturalHeight);
         imageLoaded = true;
         createMarkers();
         centerMap();
-    };
+    }, {once: true}); // only trigger once as we don't want to reset the zoom every time the map updates from the server
     mapImage.onerror = (e) => {
         console.error('Failed to load map image from map.png', e);
-        alert('Could not load map image. Please use the upload button to select your map file.');
+        alert('Could not load map image.');
     };
 }
 
