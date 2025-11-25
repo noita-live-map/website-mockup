@@ -5,6 +5,9 @@ let translateY = 0;
 let isDragging = false;
 let startX, startY;
 let imageLoaded = false;
+const REFRESH_TIMEOUT_MS = 5000;
+// TODO: TEST ME! default game_id is 12345678; tries to get it from query params
+const GAME_ID = new URLSearchParams().get('game_id') ? new URLSearchParams().get('game_id') : '12345678'
 
 // DOM elements
 const mapContainer = document.getElementById('mapContainer');
@@ -47,6 +50,25 @@ function loadMap() {
         imageLoaded = true;
         createMarkers();
         centerMap();
+        setInterval(async () => {
+            // map.src = get new background image from backend
+            const camera_pos = await fetch(`http://127.0.0.1:5000/info?game_id=${GAME_ID}`); // TODO: hardcoded local url for now, will update later
+            const data = await camera_pos.json();
+            console.log("new camera pos: ");
+            console.log(data.x, data.y);
+            
+            // TODO: FINISH THIS WITH THE REAL IMAGE SIZE
+            const game_coords_to_image_coords = (game_x, game_y) => {
+                const img_x = (game_x + 200) / 400;
+                const img_y = (game_y + 200) / 400;
+                return [img_x, img_y];
+            };
+
+            const player_marker = document.getElementsByClassName('marker player-marker')[0];
+            player_marker.style.left = `${data.x}px`;
+            player_marker.style.top = `${data.y}px`;
+
+        }, REFRESH_TIMEOUT_MS);
     }, {once: true}); // only trigger once as we don't want to reset the zoom every time the map updates from the server
     mapImage.onerror = (e) => {
         console.error('Failed to load map image from map.png', e);
