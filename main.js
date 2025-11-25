@@ -173,10 +173,12 @@ document.addEventListener('mouseup', () => {
 
 // Zoom with mouse wheel
 mapContainer.addEventListener('wheel', (e) => {
-    e.preventDefault();
+    // e.preventDefault(); // removed in favor of making this a passive event listener; see https://stackoverflow.com/questions/37721782/what-are-passive-event-listeners
     
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    const newScale = Math.min(Math.max(0.1, scale * delta), 10);
+    const MAX_ZOOM = 50 // n * 100%: 10 => 1000%, 30 => 3000%
+    const MIN_ZOOM = 0.1 // 10%
+    const delta = e.deltaY > 0 ? 0.95 : 1.05;
+    const newScale = Math.min(Math.max(MIN_ZOOM, scale * delta), MAX_ZOOM);
     
     // Zoom towards mouse cursor
     const rect = mapContainer.getBoundingClientRect();
@@ -189,7 +191,7 @@ mapContainer.addEventListener('wheel', (e) => {
     
     scale = newScale;
     updateTransform();
-});
+}, {passive: true});
 
 // Toggle overlays
 document.getElementById('toggleBosses').addEventListener('change', (e) => {
