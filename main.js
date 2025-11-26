@@ -6,8 +6,8 @@ let isDragging = false;
 let startX, startY;
 let imageLoaded = false;
 const REFRESH_TIMEOUT_MS = 5000;
-// TODO: TEST ME! default game_id is 12345678; tries to get it from query params
-const GAME_ID = new URLSearchParams().get('game_id') ? new URLSearchParams().get('game_id') : '12345678'
+// doesn't work :( TODO: TEST ME! default game_id is 12345678; tries to get it from query params
+let GAME_ID = 'cb9c1a5b6910fb2f';
 
 // DOM elements
 const mapContainer = document.getElementById('mapContainer');
@@ -67,6 +67,8 @@ function loadMap() {
             const player_marker = document.getElementsByClassName('marker player-marker')[0];
             player_marker.style.left = `${data.x}px`;
             player_marker.style.top = `${data.y}px`;
+
+            mapImage.src = `http://127.0.0.1:5000/terrain?game_id=${GAME_ID}&time=${new Date().getTime()}`;
 
         }, REFRESH_TIMEOUT_MS);
     }, {once: true}); // only trigger once as we don't want to reset the zoom every time the map updates from the server
@@ -198,7 +200,7 @@ mapContainer.addEventListener('wheel', (e) => {
     // e.preventDefault(); // removed in favor of making this a passive event listener; see https://stackoverflow.com/questions/37721782/what-are-passive-event-listeners
     
     const MAX_ZOOM = 50 // n * 100%: 10 => 1000%, 30 => 3000%
-    const MIN_ZOOM = 0.1 // 10%
+    const MIN_ZOOM = 0.05 // 5%
     const delta = e.deltaY > 0 ? 0.95 : 1.05;
     const newScale = Math.min(Math.max(MIN_ZOOM, scale * delta), MAX_ZOOM);
     
