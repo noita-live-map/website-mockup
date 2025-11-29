@@ -97,12 +97,15 @@ body {
 
 .overlay {
     position: absolute;
+    top: 0;
+    left: 0;
     pointer-events: none;
 }
 
 .marker {
     position: absolute;
     transform: translate(-50%, -50%);
+    transform-origin: center center;
     pointer-events: all;
     cursor: pointer;
 }
@@ -119,11 +122,19 @@ body {
 .orb-marker {
     width: 24px;
     height: 24px;
-    background: radial-gradient(circle, #ffff00, #ffa500);
+    background: radial-gradient(circle, #85d3ef, #5ebbeb);
     border: 2px solid #fff;
     border-radius: 50%;
-    box-shadow: 0 0 15px rgba(255, 255, 0, 0.9);
+    box-shadow: 0 0 15px rgba(94, 187, 235, 0.9);
     animation: glow 1.5s infinite;
+}
+
+.orb-marker img {
+    width: 225%;
+    position: relative;
+    top: -22px;
+    left: -12px;
+    image-rendering: pixelated;  /* important for Noita-style sprites */
 }
 
 .player-marker {
@@ -159,8 +170,8 @@ body {
 }
 
 @keyframes glow {
-    0%, 100% { box-shadow: 0 0 15px rgba(255, 255, 0, 0.9); }
-    50% { box-shadow: 0 0 25px rgba(255, 255, 0, 1); }
+    0%, 100% { box-shadow: 0 0 15px rgba(94, 187, 235, 0.9); }
+    50% { box-shadow: 0 0 25px rgba(94, 187, 235, 1); }
 }
 
 #uploadSection {
