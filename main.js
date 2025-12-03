@@ -3,11 +3,23 @@ let scale = 1;
 let translateX = 0;
 let translateY = 0;
 let isDragging = false;
-let startX, startY;
 let imageLoaded = false;
 const REFRESH_TIMEOUT_MS = 5000;
-// doesn't work :( TODO: TEST ME! default game_id is 12345678; tries to get it from query params
-let GAME_ID = 'cb9c1a5b6910fb2f';
+
+// parse the game_id query param from the URL bar
+const queryParamStrings = window.location.href.split('?')[1]?.split('&') || [];
+let GAME_ID;
+for (const queryParamString of queryParamStrings) {
+    const [param, value] = queryParamString.split('=', 2);
+    console.log(param, value)
+    if (param === 'game_id') {
+        GAME_ID = value;
+        break
+    }
+}
+
+let SERVER_ADDRESS = "http://127.0.0.1:5000";
+
 
 // DOM elements
 const mapContainer = document.getElementById('mapContainer');
@@ -24,7 +36,7 @@ const markers = {
         { x: 2346, y: 7443, name: 'Suomuhauki (Dragon)' },
         { x: 4168, y: 888, name: 'Sauvojen tuntija (Connoisseur of Wands)' },
         { x: -4841, y: 850, name: 'Ylialkemisti (High Alchemist)' },
-        { x: 3555, y: 13025, name: 'Veska, Molari, Mokke, Seula (Gate Guardian)' },
+        { x: 2836, y: 11531, name: 'Veska, Molari, Mokke, Seula (Gate Guardian)' },
         { x: 3555, y: 13025, name: 'Kolmisilmä (Three-Eye)' },
     ],
     orbs: [
@@ -57,8 +69,7 @@ function loadMap() {
         createMarkers();
         centerMap();
         setInterval(async () => {
-            // map.src = get new background image from backend
-            const camera_pos = await fetch(`http://127.0.0.1:5000/info?game_id=${GAME_ID}`); // TODO: hardcoded local url for now, will update later
+            const camera_pos = await fetch(`${SERVER_ADDRESS}/info?game_id=${GAME_ID}`); // TODO: hardcoded local url for now, will update later
             const data = await camera_pos.json();
             console.log("new camera pos: ");
             console.log(data.x, data.y);
@@ -68,7 +79,7 @@ function loadMap() {
             player_marker.style.left = `${img_x}px`;
             player_marker.style.top = `${img_y}px`;
 
-            mapImage.src = `http://127.0.0.1:5000/terrain?game_id=${GAME_ID}&time=${new Date().getTime()}`; // add the date as a cachebreaker
+            mapImage.src = `${SERVER_ADDRESS}/terrain?game_id=${GAME_ID}&time=${new Date().getTime()}`; // add the date as a cachebreaker
 
         }, REFRESH_TIMEOUT_MS);
     }, {once: true}); // only trigger once as we don't want to reset the zoom every time the map updates from the server
